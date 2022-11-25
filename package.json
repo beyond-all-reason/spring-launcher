@@ -35,6 +35,7 @@
       ]
     },
     "win": {
+      "publisherName": "BAR Team",
       "extraFiles": [
         "bin/butler/windows/*",
         "bin/pr-downloader.exe",
