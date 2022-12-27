@@ -1,7 +1,7 @@
 'use strict';
 
-const { existsSync, unlinkSync } = require('fs');
-
+const fs = require('fs');
+const path = require('path');
 const { app } = require('electron');
 const util = require('util');
 const { format } = util;
@@ -23,17 +23,16 @@ log.transports.console = (msg) => {
 	}
 };
 
-const logPath = `${springPlatform.writePath}/spring-launcher.log`;
-if (existsSync(logPath)) {
-	try {
-		unlinkSync(logPath);
-	} catch (err) {
-		log.error(`Cannot remove file at: ${logPath}`);
-		log.error(err);
-	}
+const logsDir = path.join(springPlatform.writePath, 'launcher-logs');
+if (!fs.existsSync(logsDir)) {
+	fs.mkdirSync(logsDir);
 }
-log.transports.file.file = logPath;
+const runId = new Date().toISOString().replace(/[^0-9T]/g, '').substring(0, 15);
+const logPath = path.join(logsDir, `spring-launcher-${runId}.log`);
+
+log.transports.file.resolvePath = () => logPath;
 log.transports.file.level = 'info';
+log.transports.file.maxSize = 0;
 
 log.info('Begin log');
 log.info(`Log file: ${logPath}`);
@@ -82,5 +81,6 @@ function wrapEmitterLogs(emitter) {
 module.exports = {
 	log: log,
 	logPath: logPath,
+	logDir: logsDir,
 	wrapEmitterLogs: wrapEmitterLogs
 };

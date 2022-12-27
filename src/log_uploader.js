@@ -3,6 +3,9 @@
 const { dialog, clipboard } = require('electron');
 const { config } = require('./launcher_config');
 const fs = require('fs');
+const path = require('path');
+const path7za = require('./path_7za');
+const sevenZ = require('node-7z');
 
 const github = require('octonode');
 const got = require('got');
@@ -11,7 +14,8 @@ AWS.config.update({
 	correctClockSkew: true, // Fix for RequestTimeTooSkewed error
 });
 
-const { log, logPath } = require('./spring_log');
+const springPlatform = require('./spring_platform');
+const { log, logPath, logDir } = require('./spring_log');
 
 // such security, much wow
 const sec = [
@@ -97,27 +101,51 @@ function upload() {
 }
 
 function uploadToS3() {
-	const fileContent = fs.readFileSync(logPath);
-	const fileName = 'spring-launcher_' + new Date().getTime() + '.log' // File name to save as
+	// Pick the last $lastLogsToUpload log files.
+	const lastLogsToUpload = 7;
+	const logFiles = fs.readdirSync(logDir).sort().slice(-lastLogsToUpload).map(f => path.join(logDir, f));
 
-	const s3 = new AWS.S3({
-		accessKeyId: aws_id,
-		secretAccessKey: aws_secret
+	const archiveId = new Date().toISOString().replace(/[^0-9T]/g, '');
+	const archiveFile = `spring-launcher-logs-${archiveId}.zip`;
+	const archivePath = path.join(springPlatform.writePath, archiveFile)
+
+	const stream7z = sevenZ.add(archivePath, logFiles, {
+		$bin: path7za,
 	});
 
-	const params = {
-		Bucket: logs_s3_bucket,
-		Key: fileName,
-		Body: fileContent,
-		ContentType: 'text/plain'
-	};
-
 	return new Promise((resolve, reject) => {
-		s3.upload(params, function(err, data) {
-			if (err) {
-				reject(err);
-			}
-			resolve({ 'url': data?.Location });
+		stream7z.on('end', () => {
+			log.info(stream7z.info);
+			const fileContent = fs.readFileSync(archivePath);
+
+			const s3 = new AWS.S3({
+				accessKeyId: aws_id,
+				secretAccessKey: aws_secret
+			});
+
+			const stream = fs.createReadStream(archivePath);
+			const params = {
+				Bucket: logs_s3_bucket,
+				Key: archiveFile,
+				Body: stream,
+				ContentType: 'application/zip'
+			};
+
+			s3.upload(params, function(err, data) {
+				fs.unlink(archivePath, (err) => {
+					if (err) {
+						log.warn(`Failed to remove temporary file ${archivePath}: ${err}`);
+					}
+				});
+				if (err) {
+					reject(err);
+				}
+				resolve({ 'url': data?.Location });
+			});
+		});
+
+		stream7z.on('error', error => {
+			reject(error);
 		});
 	});
 }
