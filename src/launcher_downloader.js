@@ -73,6 +73,10 @@ springDownloader.on('failed', (downloadItem, msg) => {
 		wizard.isActive = false;
 		gui.send('error', msg);
 		wizard.setEnabled(false);
+		const mainWindow = gui.getMainWindow();
+		if (mainWindow != null) {
+			mainWindow.setProgressBar(-1);
+		}
 	}
 });
 
