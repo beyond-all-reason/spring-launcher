@@ -60,6 +60,10 @@ springDownloader.on('finished', (downloadItem) => {
 		wizard.isActive = false;
 		gui.send('dl-finished', downloadItem);
 		wizard.nextStep();
+		const mainWindow = gui.getMainWindow();
+		if (mainWindow != null) {
+			mainWindow.setProgressBar(-1);
+		}
 	}
 });
 
