@@ -22,8 +22,7 @@ const defaultSetup = {
 	'no_start_script': false,
 	'load_dev_exts': false,
 	'route_prd_to_nextgen': false,
-	'logs_s3_bucket': null,
-	'github_log_repo': null,
+	'log_upload_url': null,
 	'config_url': null,
 	'silent': true,
 

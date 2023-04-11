@@ -59,7 +59,6 @@
   "dependencies": {
     "@electron/remote": "2.0.8",
     "7zip-bin": "5.0.3",
-    "aws-sdk": "2.1285.0",
     "chokidar": "3.5.3",
     "electron-log": "4.4.8",
     "electron-settings": "4.0.2",
@@ -67,7 +66,6 @@
     "extract-zip": "2.0.1",
     "got": "11.8.5",
     "node-7z": "2.1.2",
-    "octonode": "0.10.2",
     "sdfz-demo-parser": "5.6.1",
     "spring-map-parser": "4.4.0",
     "spring-nextgen-dl": "0.2.3",
