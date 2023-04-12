@@ -1,6 +1,6 @@
 'use strict';
 
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, shell } = require('electron');
 
 const { setConfigEnabled } = require('./renderer_config');
 
@@ -18,6 +18,8 @@ let currentStep = 0;
 
 let operationInProgress = false;
 let nextStepEnabled = true;
+
+let error_suffix = null;
 
 ipcRenderer.on('wizard-list', (_, s) => {
 	steps = s;
@@ -81,9 +83,20 @@ function setInProgress(state) {
 }
 
 function stepError(message) {
-	lblFull.innerHTML = message;
+	if (error_suffix) {
+		lblFull.innerHTML = `${message} ${error_suffix}`;
+	} else {
+		lblFull.innerHTML = message;
+	}
 	lblFull.classList.add('error');
 	lblPart.classList.add('error');
+
+	lblFull.addEventListener('click', event => {
+		if (event.target.tagName.toLowerCase() === 'a') {
+			event.preventDefault();
+			shell.openExternal(event.target.href);
+		}
+	});
 
 	pbFull.classList.remove('is-primary');
 	pbPart.classList.remove('is-primary');
@@ -112,6 +125,8 @@ function updateWizard(config) {
 			}
 		}
 	}
+
+	error_suffix = config.error_suffix;
 
 	resetUI();
 	btnProgress.innerHTML = buttonText;

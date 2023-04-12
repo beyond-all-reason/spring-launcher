@@ -170,7 +170,7 @@ class Wizard extends EventEmitter {
 					});
 
 					updater.downloadUpdate();
-				}
+				};
 
 				steps.push({
 					name: 'launcher_update',

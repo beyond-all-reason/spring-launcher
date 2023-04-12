@@ -23,10 +23,13 @@ const defaultSetup = {
 	'load_dev_exts': false,
 	'route_prd_to_nextgen': false,
 	// It can be a single string or array of destinations to try in
-	// sequence for reliability in case first one fails.
+	// sequence for reliability in case first one fails. Can be set globally.
 	'log_upload_url': null,
 	'config_url': null,
 	'silent': true,
+	// String with HTML code (USE WITH CAUTION!) to attach to the error field.
+	// Can be set globally.
+	'error_suffix': null,
 
 	// Default values for environment variables to be set for all the executed
 	// child processes like pr-downloader.
@@ -139,6 +142,9 @@ function applyDefaults(conf) {
 		const defaultSetupCopy = JSON.parse(JSON.stringify(defaultSetup));
 		const setup = mergeDeep(defaultSetupCopy, conf.setups[i]);
 		setup.title = conf.title;
+		if (!setup.error_suffix) {
+			setup.error_suffix = conf.error_suffix;
+		}
 		conf.setups[i] = setup;
 	}
 	return conf;
@@ -226,7 +232,13 @@ function hotReloadSafe(newFile) {
 		return 'identical';
 	}
 
-	if (!objEqual(newFile, configFile, ['setups', 'log_upload_url', 'config_url'])) {
+	const noRestartGlobalProperties = [
+		'setups',
+		'log_upload_url',
+		'config_url',
+		'error_suffix'
+	];
+	if (!objEqual(newFile, configFile, noRestartGlobalProperties)) {
 		return 'restart';
 	}
 
