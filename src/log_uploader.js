@@ -25,11 +25,12 @@ function upload_ask() {
 	// TODO: probably should disable the UI while this is being done
 	const dialogBtns = ['Yes (Upload)', 'No'];
 
+	const primaryUploadUrl = config.log_upload_url instanceof Array ? config.log_upload_url[0] : config.log_upload_url;
 	dialog.showMessageBox({
 		'type': 'info',
 		'buttons': dialogBtns,
 		'title': 'Upload log',
-		'message': `Do you want to upload your log to ${config.log_upload_url} ? All information will be public.`
+		'message': `Do you want to upload your log to ${primaryUploadUrl} ? All information will be public.`
 	}).then(result => {
 		const response = result.response;
 		log.info('User wants to upload? ', dialogBtns[response]);
@@ -74,11 +75,15 @@ function upload() {
 		$bin: path7za,
 	});
 
+	const uploadUrls = config.log_upload_url instanceof Array ? config.log_upload_url : [config.log_upload_url];
+
 	return new Promise((resolve, reject) => {
-		stream7z.on('end', () => {
-			log.info(stream7z.info);
-			const contents = fs.readFileSync(archivePath);
-			const uploadUrl = `${config.log_upload_url}/${archiveFile}`;
+		function tryToUpload(contents, urlIdx) {
+			if (urlIdx > uploadUrls.length) {
+				return reject('Failed to upload log to all configured URLs.');
+			}
+
+			const uploadUrl = `${uploadUrls[urlIdx]}/${archiveFile}`;
 			got(uploadUrl, {
 				method: 'PUT',
 				body: contents,
@@ -90,7 +95,16 @@ function upload() {
 					}
 				});
 				resolve({ url: res.downloadUrl });
-			}).catch(reject);
+			}).catch((err) => {
+				log.warn(`Failed to upload log to ${uploadUrl}: ${err}`);
+				tryToUpload(contents, urlIdx + 1);
+			});
+		}
+
+		stream7z.on('end', () => {
+			log.info(stream7z.info);
+			const contents = fs.readFileSync(archivePath);
+			tryToUpload(contents, 0);
 		});
 
 		stream7z.on('error', error => {

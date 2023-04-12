@@ -22,6 +22,8 @@ const defaultSetup = {
 	'no_start_script': false,
 	'load_dev_exts': false,
 	'route_prd_to_nextgen': false,
+	// It can be a single string or array of destinations to try in
+	// sequence for reliability in case first one fails.
 	'log_upload_url': null,
 	'config_url': null,
 	'silent': true,
