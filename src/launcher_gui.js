@@ -1,9 +1,10 @@
 'use strict';
 
 const electron = require('electron');
-const { app, BrowserWindow, Menu, Tray } = electron;
+const { app, BrowserWindow, Menu, Tray, dialog } = electron;
 const isDev = !require('electron').app.isPackaged;
-
+const settings = require('electron-settings');
+const { writePath } = require('./spring_platform');
 const { config } = require('./launcher_config');
 
 let mainWindow;
@@ -94,6 +95,32 @@ app.prependListener('ready', () => {
 	mainWindow.once('ready-to-show', () => {
 		mainWindow.show();
 		//mainWindow.resizable = false; // Disable resizing of the launcher window, this does not get passed to spring.exe
+
+		function isPrintableASCII(str) {
+			return /^[\x20-\x7F]*$/.test(str);
+		}
+
+		if (process.platform == 'win32' &&
+			!isPrintableASCII(writePath) &&
+			!config.disable_win_ascii_install_path_check &&
+			!settings.getSync('disableNonAsciiPathWarning')) {
+			dialog.showMessageBox(mainWindow, {
+				type: 'warning',
+				title: 'Non-ASCII install directory',
+				buttons: ['OK'],
+				message: 'Beyond All Reason installation path contains non-ASCII characters.',
+				detail:
+					`Current installation path ${writePath} constains non-ASCII characters (non English alphabet letters). ` +
+					'It is currently not supported and will likely prevent the game updating and starting properly. ' +
+					'Please reinstall the game under location that contains only ASCII characters.',
+				checkboxLabel: 'Do not show this message again',
+				noLink: true,
+			}).then(({ checkboxChecked }) => {
+				if (checkboxChecked) {
+					settings.setSync('disableNonAsciiPathWarning', true);
+				}
+			});
+		}
 
 		gui.send('all-configs', config.getAvailableConfigs());
 

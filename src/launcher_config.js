@@ -30,6 +30,7 @@ const defaultSetup = {
 	// String with HTML code (USE WITH CAUTION!) to attach to the error field.
 	// Can be set globally.
 	'error_suffix': null,
+	'disable_win_ascii_install_path_check': false,
 
 	// Default values for environment variables to be set for all the executed
 	// child processes like pr-downloader.
@@ -236,7 +237,8 @@ function hotReloadSafe(newFile) {
 		'setups',
 		'log_upload_url',
 		'config_url',
-		'error_suffix'
+		'error_suffix',
+		'disable_win_ascii_install_path_check'
 	];
 	if (!objEqual(newFile, configFile, noRestartGlobalProperties)) {
 		return 'restart';
