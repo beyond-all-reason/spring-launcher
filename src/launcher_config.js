@@ -224,7 +224,7 @@ function hotReloadSafe(newFile) {
 		return 'identical';
 	}
 
-	if (!objEqual(newFile, configFile, ['setups'])) {
+	if (!objEqual(newFile, configFile, ['setups', 'log_upload_url', 'config_url'])) {
 		return 'restart';
 	}
 
