@@ -52,22 +52,23 @@ class HttpDownloader extends EventEmitter {
 		}
 	}
 
-	downloadResource(resource) {
+	downloadResource(name, resource) {
 		const url = new URL(resource['url']);
-		const name = resource['destination'];
-		const destination = path.join(springPlatform.writePath, name);
+		this.name = name;
+		const destination = path.join(springPlatform.writePath, resource['destination']);
 		if (fs.existsSync(destination)) {
-			this.emit('finished', `Skipping ${destination}: already exists.`);
+			// this.emit('finished', `Skipping ${destination}: already exists.`);
+			this.emit('finished', this.name);
 			log.info(`Skipping ${destination}: already exists.`);
 			return;
 		}
 
 		const destinationTemp = getTemporaryFileName('download');
-		this.emit('started', name);
+		this.emit('started', this.name);
 		// FIXME: What's going on here..? () shouldn't be preventing this. from working
 		// Is then the problem?
 		const extractor = this.extractor;
-		this.download(name, 'resource', url, destinationTemp)
+		this.download(this.name, 'resource', url, destinationTemp)
 			.then(() => {
 				log.info('Finished http download');
 
@@ -75,11 +76,12 @@ class HttpDownloader extends EventEmitter {
 
 				if (!resource['extract']) {
 					fs.renameSync(destinationTemp, destination);
-					this.emit('finished', name);
+					this.emit('finished', this.name);
 					return;
 				}
 
-				this.emit('progress', `Extracting to ${destination}`, 100, 100);
+				// this.emit('progress', `Extracting to ${destination}`, 100, 100);
+				this.emit('progress', this.name, 100, 100);
 
 				extractor.extract(name, url, destinationTemp, destination);
 			}).catch(reason => {
@@ -95,8 +97,8 @@ class HttpDownloader extends EventEmitter {
 				log.info('failed', `Download failed: ${reason}`);
 				if (resource['optional']) {
 					log.warn(reason);
-					log.warn("Download is optional, marking as finished succesfully.");
-					this.emit('finished', name);
+					log.warn('Download is optional, marking as finished succesfully.');
+					this.emit('finished', this.name);
 				} else {
 					log.error(reason);
 					this.emit('failed', this.name, reason);
