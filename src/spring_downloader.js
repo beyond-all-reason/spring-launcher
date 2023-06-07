@@ -105,9 +105,9 @@ class SpringDownloader extends EventEmitter {
 		currentDownloader = prdDownloader;
 	}
 
-	downloadResource(resource) {
+	downloadResource(name, resource) {
 		const downloader = getDownloader(resource['url']);
-		downloader.downloadResource(resource);
+		downloader.downloadResource(name, resource);
 		currentDownloader = downloader;
 	}
 

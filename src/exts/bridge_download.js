@@ -59,7 +59,7 @@ function DownloadFront() {
 			log.warn('Extract field missing, assuming false.');
 			resource.extract = false;
 		}
-		springDownloader.downloadResource(resource);
+		springDownloader.downloadResource(name, resource);
 	} else {
 		log.error(`Unknown type: ${type} for download ${dl}`);
 	}
