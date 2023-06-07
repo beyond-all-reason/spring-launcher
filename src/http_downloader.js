@@ -57,7 +57,7 @@ class HttpDownloader extends EventEmitter {
 		const name = resource['destination'];
 		const destination = path.join(springPlatform.writePath, name);
 		if (fs.existsSync(destination)) {
-			this.emit('finished', `Skipping ${destination}: already exists.`);
+			this.emit('finished', name);
 			log.info(`Skipping ${destination}: already exists.`);
 			return;
 		}
@@ -79,7 +79,7 @@ class HttpDownloader extends EventEmitter {
 					return;
 				}
 
-				this.emit('progress', `Extracting to ${destination}`, 100, 100);
+				this.emit('progress', name, 100, 100);
 
 				extractor.extract(name, url, destinationTemp, destination);
 			}).catch(reason => {
@@ -95,11 +95,11 @@ class HttpDownloader extends EventEmitter {
 				log.info('failed', `Download failed: ${reason}`);
 				if (resource['optional']) {
 					log.warn(reason);
-					log.warn("Download is optional, marking as finished succesfully.");
+					log.warn('Download is optional, marking as finished succesfully.');
 					this.emit('finished', name);
 				} else {
 					log.error(reason);
-					this.emit('failed', this.name, reason);
+					this.emit('failed', name, reason);
 				}
 			});
 	}

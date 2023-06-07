@@ -42,7 +42,7 @@ class Extractor extends EventEmitter {
 			} catch (error) {
 				log.error(`Cannot unlink file after extracting: ${source}: ${error}`);
 			}
-			this.emit('finished', );
+			this.emit('finished', name);
 		});
 
 		extractor.on('failed', err => {
