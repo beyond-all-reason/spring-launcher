@@ -12,3 +12,4 @@ data
 
 # spring-launcher temporary files
 Settings
+src/config.json
