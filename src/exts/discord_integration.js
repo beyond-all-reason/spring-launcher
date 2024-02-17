@@ -1,14 +1,35 @@
 const { bridge } = require('../spring_api');
 const { log } = require('../spring_log');
+const { config } = require('../launcher_config');
 const DiscordRPC = require("discord-rpc");
 
-// Application ID from https://discord.com/developers/applications/<clientId>/
-const clientId = '1185990483143569448';
+if (config) {
+    if (config.discord_rich_presence.application_id == null) {
+        log.warn("config.discord_rich_presence.application_id not defined");
+        return
+    }
+}
 
-DiscordRPC.register(clientId);
+// Application ID from https://discord.com/developers/applications/<applicationId>/
+const applicationId = "1185990483143569448";
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
+DiscordRPC.register(applicationId);
+
 bridge.on('DiscordSetActivity', async command => {
+    // command
+    // {
+    //     state - string
+    //     details - string
+    //     startTimestamp - unix timestamp
+    //     playerCount - int > 0
+    //     maxPlayerCount - int > 0
+    //     partyId - string
+    //     largeImageText - string
+    //     smallImageKey - string
+    //     smallImageText - string
+    // }
+
     if (!rpc) {
         log.warn("DiscordSetActivity - No Discord RPC");
         return
@@ -26,17 +47,19 @@ bridge.on('DiscordSetActivity', async command => {
     // Name of the uploaded image for the large profile artwork
     // Minimap Image URL
     const largeImageKey = command.details ?
-        `https://maps-metadata.beyondallreason.dev/latest/discordPresenceThumb/redir.${encodeURIComponent(command.details)}.1024.jpg` :
-        'barlogobox';
+        String(config.discord_rich_presence.minimap_link).replace("<map>", encodeURIComponent(command.details)) :
+        config.discord_rich_presence.large_image_key_default;   
 
     // Tooltip for the largeImageKey
-    const largeImageText = command.largeImageText ? command.largeImageText : 'Beyond All Reason';
+    const largeImageText = command.largeImageText ?
+        command.largeImageText :
+        config.discord_rich_presence.large_image_text_default;
 
     // Name of the uploaded image key for the small profile artwork
-    const smallImageKey = command.smallImageKey ? command.smallImageKey : 'barlogobox';
+    const smallImageKey = command.smallImageKey ? command.smallImageKey : config.discord_rich_presence.small_image_key_default;
 
     // Tooltip for the smallImageKey
-    const smallImageText = command.smallImageKey ? command.smallImageKey : 'Beyond All Reason';
+    const smallImageText = command.smallImageText ? command.smallImageText : config.discord_rich_presence.small_image_text_default;
 
     // Both playerCount and maxPlayerCount have to be > 0 to avoid errors
     let playerCount;
@@ -64,8 +87,8 @@ bridge.on('DiscordSetActivity', async command => {
         buttons: [{
             label: "Play",
             url: "https://www.beyondallreason.info/",
-        }],
+        }]
     });
 });
 
-rpc.login({ clientId }).catch(console.error);
+rpc.login({ clientId: applicationId }).catch(console.error);
