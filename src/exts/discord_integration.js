@@ -58,9 +58,9 @@ bridge.on('DiscordSetActivity', async command => {
     };
 
     if (command.details && config.discord_rich_presence.minimap_url) {
-        activity.largeImageKey = config.discord_rich_presence.minimap_url.replace("<map>", encodeURIComponent(command.details))
+        activity.largeImageKey = config.discord_rich_presence.minimap_url.replace("<map>", encodeURIComponent(command.details));
     } else {
-        activity.largeImageKey = config.discord_rich_presence.large_image_key_default
+        activity.largeImageKey = config.discord_rich_presence.large_image_key_default;
     }
 
     // Both playerCount and maxPlayerCount have to be > 0 to avoid errors
