@@ -3,92 +3,75 @@ const { log } = require('../spring_log');
 const { config } = require('../launcher_config');
 const DiscordRPC = require("discord-rpc");
 
-if (config) {
-    if (config.discord_rich_presence.application_id == null) {
-        log.warn("config.discord_rich_presence.application_id not defined");
-        return
-    }
+if (config.discord_rich_presence.application_id == null) {
+    log.warn("config.discord_rich_presence.application_id not defined");
+    return
 }
 
 // Application ID from https://discord.com/developers/applications/<applicationId>/
-const applicationId = "1185990483143569448";
+const applicationId = config.discord_rich_presence.application_id;
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+let loginSuccessful = false;
 
 DiscordRPC.register(applicationId);
 
+async function TryToLogin() {
+    try {
+        await rpc.login({ clientId: applicationId });
+        loginSuccessful = true;
+    } catch (error) {
+        log.warn("Discord RPC login error - Discord not running?");
+        loginSuccessful = false;
+    }
+}
+
+
+//if (!loginSuccessful) return;
+
 bridge.on('DiscordSetActivity', async command => {
     // command
+    // https://discord.com/developers/docs/rich-presence/how-to#updating-presence-update-presence-payload-fields
     // {
-    //     state - string
-    //     details - string
-    //     startTimestamp - unix timestamp
-    //     playerCount - int > 0
-    //     maxPlayerCount - int > 0
-    //     partyId - string
-    //     largeImageText - string
-    //     smallImageKey - string
-    //     smallImageText - string
+    //     state : string - Playing, spectating, in menu, in lobby, watching replay...
+    //     details : string - Map name
+    //     startTimestamp : unix timestamp - including will show time as "elapsed"
+    //     playerCount : int > 0
+    //     maxPlayerCount : int > 0
+    //     partyId : string - battle ID for now
+    //     largeImageText : string - tooltip for the largeImageKey
+    //     smallImageKey : string - name of the uploaded image for the large profile artwork, can also be URL
+    //     smallImageText : string - tooltip for the smallImageKey
     // }
 
-    if (!rpc) {
-        log.warn("DiscordSetActivity - No Discord RPC");
-        return
-    };
 
-    // Playing, spectating, in menu, in lobby, watching replay...
-    const state = command.state;
+    if(!loginSuccessful) await TryToLogin(); 
 
-    // Map name
-    const details = command.details;
-
-    // Epoch seconds for game start - including will show time as "elapsed"
-    const startTimestamp = command.startTimestamp;
-
-    // Name of the uploaded image for the large profile artwork
-    // Minimap Image URL
     const largeImageKey = command.details ?
-        String(config.discord_rich_presence.minimap_link).replace("<map>", encodeURIComponent(command.details)) :
+        String(config.discord_rich_presence.minimap_url).replace("<map>", encodeURIComponent(command.details)) :
         config.discord_rich_presence.large_image_key_default;   
-
-    // Tooltip for the largeImageKey
-    const largeImageText = command.largeImageText ?
-        command.largeImageText :
-        config.discord_rich_presence.large_image_text_default;
-
-    // Name of the uploaded image key for the small profile artwork
-    const smallImageKey = command.smallImageKey ? command.smallImageKey : config.discord_rich_presence.small_image_key_default;
-
-    // Tooltip for the smallImageKey
-    const smallImageText = command.smallImageText ? command.smallImageText : config.discord_rich_presence.small_image_text_default;
-
-    // Both playerCount and maxPlayerCount have to be > 0 to avoid errors
+    const partyId = String(command.partyId)
     let playerCount;
     let maxPlayerCount;
-
+    // Both playerCount and maxPlayerCount have to be > 0 to avoid errors
     if(command.playerCount > 0 && command.maxPlayerCount > 0) {
         playerCount = command.playerCount;
         maxPlayerCount = command.maxPlayerCount;
     }
-
-    // Party id (battle id for now)
-    const partyId = String(command.partyId)
-
+    
     rpc.setActivity({
-        state: state,
-        details: details,
-        startTimestamp: startTimestamp,
+        state: command.state,
+        details: command.details,
+        startTimestamp: command.startTimestamp,
         largeImageKey: largeImageKey,
-        largeImageText: largeImageText,
-        smallImageKey: smallImageKey,    
-        smallImageText: smallImageText,
+        largeImageText: command.largeImageText ?? config.discord_rich_presence.large_image_text_default,
+        smallImageKey: command.smallImageKey ?? config.discord_rich_presence.small_image_key_default,    
+        smallImageText: command.smallImageText ?? config.discord_rich_presence.small_image_text_default,
         partySize: playerCount,
         partyMax: maxPlayerCount,
         partyId: partyId,
         buttons: [{
-            label: "Play",
-            url: "https://www.beyondallreason.info/",
+            label: config.discord_rich_presence.button_label,
+            url: config.discord_rich_presence.button_url
         }]
     });
 });
-
-rpc.login({ clientId: applicationId }).catch(console.error);
