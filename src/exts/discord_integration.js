@@ -10,21 +10,25 @@ if (config.discord_rich_presence.application_id == null) {
 
 // Application ID from https://discord.com/developers/applications/<applicationId>/
 const applicationId = config.discord_rich_presence.application_id;
-let rpc;
-let loginSuccessful = false;
+const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+let connected = false;
 
 DiscordRPC.register(applicationId);
 
 async function TryToLogin() {
-    rpc = new DiscordRPC.Client({ transport: 'ipc' });
     try {
         await rpc.login({ clientId: applicationId });
-        loginSuccessful = true;
     } catch (error) {
         log.warn("Discord RPC login error - Discord not running?");
-        loginSuccessful = false;
     }
 }
+
+rpc.on("connected", () => connected = true);
+rpc.on("disconnected", () => 
+{
+    connected = false ;
+    rpc._connectPromise = null;
+});
 
 bridge.on('DiscordSetActivity', async command => {
     // command
@@ -40,13 +44,12 @@ bridge.on('DiscordSetActivity', async command => {
     //     smallImageKey : string - name of the uploaded image for the large profile artwork, can also be URL
     //     smallImageText : string - tooltip for the smallImageKey
     // }
+    if (!connected) await TryToLogin()
+    if (!connected) return
 
-    if(!loginSuccessful) await TryToLogin();
-    if(!loginSuccessful) return;
-
-    const activity = {
+    let activity = {
         state: command.state,
-        details: command.details,
+        details: command.mapName,
         startTimestamp: command.startTimestamp,
         largeImageText: command.largeImageText ?? config.discord_rich_presence.large_image_text_default,
         smallImageKey: command.smallImageKey ?? config.discord_rich_presence.small_image_key_default,    
@@ -57,20 +60,20 @@ bridge.on('DiscordSetActivity', async command => {
         }]
     };
 
-    if (command.details && config.discord_rich_presence.minimap_url) {
-        activity.largeImageKey = config.discord_rich_presence.minimap_url.replace("<map>", encodeURIComponent(command.details));
+    if (command.mapName && config.discord_rich_presence.minimap_url) {
+        activity.largeImageKey = config.discord_rich_presence.minimap_url.replace("<map>", encodeURIComponent(command.mapName));
     } else {
         activity.largeImageKey = config.discord_rich_presence.large_image_key_default;
     }
 
     // Both playerCount and maxPlayerCount have to be > 0 to avoid errors
     if (command.playerCount > 0 && command.maxPlayerCount > 0) {
-        activity.playerCount = command.playerCount;
-        activity.maxPlayerCount = command.maxPlayerCount;
+        activity.partySize = command.playerCount;
+        activity.partyMax = command.maxPlayerCount;
     }
 
     if (command.partyId) {
-        activity.partyId = command.partyId.toString();
+        activity.partyId = command.battleId.toString();
     }
 
     try {
