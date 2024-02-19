@@ -10,25 +10,23 @@ if (config.discord_rich_presence.application_id == null) {
 
 // Application ID from https://discord.com/developers/applications/<applicationId>/
 const applicationId = config.discord_rich_presence.application_id;
-const rpc = new DiscordRPC.Client({ transport: 'ipc' });
-let connected = false;
+let rpc = null;
 
 DiscordRPC.register(applicationId);
 
 async function TryToLogin() {
+    if (rpc) return;
     try {
+        rpc = new DiscordRPC.Client({ transport: 'ipc' });
+        rpc.on('disconnected', () => {
+            rpc = null;
+        });
         await rpc.login({ clientId: applicationId });
     } catch (error) {
+        rpc = null;
         log.warn("Discord RPC login error - Discord not running?");
     }
 }
-
-rpc.on("connected", () => connected = true);
-rpc.on("disconnected", () => 
-{
-    connected = false ;
-    rpc._connectPromise = null;
-});
 
 bridge.on('DiscordSetActivity', async command => {
     // command
@@ -44,8 +42,8 @@ bridge.on('DiscordSetActivity', async command => {
     //     smallImageKey : string - name of the uploaded image for the large profile artwork, can also be URL
     //     smallImageText : string - tooltip for the smallImageKey
     // }
-    if (!connected) await TryToLogin()
-    if (!connected) return
+    if (!rpc) await TryToLogin()
+    if (!rpc) return
 
     let activity = {
         state: command.state,
