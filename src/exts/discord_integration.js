@@ -10,21 +10,23 @@ if (!config.discord_rich_presence?.application_id) {
 
 // Application ID from https://discord.com/developers/applications/<applicationId>/
 const applicationId = config.discord_rich_presence.application_id;
-let rpc = null;
 
 DiscordRPC.register(applicationId);
 
-async function TryToLogin() {
-	if (rpc) return;
+let rpc = null;
+async function tryToLogin() {
+	if (rpc) return true;
 	try {
 		rpc = new DiscordRPC.Client({ transport: 'ipc' });
 		rpc.on('disconnected', () => {
 			rpc = null;
 		});
 		await rpc.login({ clientId: applicationId });
+		return true;
 	} catch (error) {
 		rpc = null;
-		log.warn('Discord RPC login error - Discord not running?');
+		log.warn('Discord RPC: login error - Discord not running?');
+		return false;
 	}
 }
 
@@ -42,10 +44,9 @@ bridge.on('DiscordSetActivity', async command => {
 	//     smallImageKey : string - name of the uploaded image for the large profile artwork, can also be URL
 	//     smallImageText : string - tooltip for the smallImageKey
 	// }
-	if (!rpc) await TryToLogin();
-	if (!rpc) return;
+	if (!await tryToLogin()) return;
 
-	let activity = {
+	const activity = {
 		state: command.state,
 		details: command.mapName,
 		startTimestamp: command.startTimestamp,
@@ -77,6 +78,6 @@ bridge.on('DiscordSetActivity', async command => {
 	try {
 		await rpc.setActivity(activity);
 	} catch (error) {
-		log.warn('Error while setting activity:', error);
+		log.warn('Discord RPC: Error while setting activity:', error);
 	}
 });
