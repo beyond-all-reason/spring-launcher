@@ -3,8 +3,8 @@ const { log } = require('../spring_log');
 const { config } = require('../launcher_config');
 const DiscordRPC = require("discord-rpc");
 
-if (config.discord_rich_presence.application_id == null) {
-    log.warn("config.discord_rich_presence.application_id not defined");
+if (!config.discord_rich_presence?.application_id) {
+    log.warn("config.discord_rich_presence.application_id not defined, integration disabled");
     return
 }
 
