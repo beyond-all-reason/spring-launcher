@@ -15,7 +15,7 @@
     "build-mac": "electron-builder -m",
     "build": "electron-builder -wl"
   },
-  "author": "gajop",
+  "author": "BAR Team",
   "license": "ISC",
   "build": {
     "appId": "com.springrts.launcher",
