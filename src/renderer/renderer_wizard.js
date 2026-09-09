@@ -80,6 +80,7 @@ function setInProgress(state) {
 	cbCheckForUpdates.disabled = state;
 	lblCheckForUpdates.disabled = state;
 	operationInProgress = state;
+	focusMainButtonWhenActionable();
 }
 
 function stepError(message) {
@@ -158,6 +159,21 @@ function resetUI() {
 function setNextStepEnabled(enabled) {
 	nextStepEnabled = enabled;
 	btnProgress.disabled = !enabled;
+	focusMainButtonWhenActionable();
+}
+
+function focusMainButtonWhenActionable() {
+	if (operationInProgress || !nextStepEnabled) {
+		return;
+	}
+	const focused = document.activeElement;
+	const userFocusedSomethingElse = focused != null
+		&& focused !== document.body
+		&& focused !== btnProgress;
+	if (userFocusedSomethingElse) {
+		return;
+	}
+	btnProgress.focus();
 }
 
 module.exports = {
