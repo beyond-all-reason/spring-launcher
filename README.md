@@ -1,7 +1,7 @@
 # spring-launcher
 Launcher for SpringRTS games
 
-[![Build Status](https://travis-ci.org/gajop/spring-launcher.svg?branch=master)](https://travis-ci.org/gajop/spring-launcher)
+[![CI](https://github.com/beyond-all-reason/spring-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/beyond-all-reason/spring-launcher/actions/workflows/ci.yml)
 
 ## What's this for?
 
