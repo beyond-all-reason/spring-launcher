@@ -35,9 +35,15 @@ module.exports = {
 	setMainTitle,
 };
 
-// Prevent all buttons from staying focused.
-for (const btn of document.querySelectorAll('button')) {
-	btn.addEventListener('focus', () => btn.blur());
+// Prevent buttons other than the main one from staying focused, handing focus
+// back to the main button so that it remains the keyboard target and can be
+// activated with Enter/Space.
+const btnProgress = document.getElementById('btn-progress');
+for (const btn of document.querySelectorAll('button:not(#btn-progress)')) {
+	btn.addEventListener('focus', () => {
+		btn.blur();
+		btnProgress.focus();
+	});
 }
 
 // Update the global css variables
