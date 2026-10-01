@@ -23,10 +23,10 @@ class Extractor extends EventEmitter {
 		this.attemptNumber = 1;
 	}
 
-	extract(name, url, source, destination, attempts = TOTAL_EXTRACT_ATTEMPTS, timeBetweenAttempts = TIME_BETWEEN_ATTEMPTS_MS) {
+	extract(name, source, destination, attempts = TOTAL_EXTRACT_ATTEMPTS, timeBetweenAttempts = TIME_BETWEEN_ATTEMPTS_MS) {
 		const tmpDestination = getTemporaryFileName('extract');
 
-		const extractor = this.getExtractor(url);
+		const extractor = this.getExtractor(source);
 		extractor.on('finished', () => {
 			try {
 				log.info(`Moving from ${tmpDestination} after extraction has been finished to ${destination}`);
@@ -79,9 +79,9 @@ class Extractor extends EventEmitter {
 		extractor.extract(source, tmpDestination);
 	}
 
-	getExtractor(url) {
-		const isZip = url.href.endsWith('.zip');
-		const is7z = url.href.endsWith('.7z');
+	getExtractor(source) {
+		const isZip = source.endsWith('.zip');
+		const is7z = source.endsWith('.7z');
 		if (isZip) {
 			log.info('Extracting as .zip file.');
 			return new ExtractorZip();
@@ -90,7 +90,7 @@ class Extractor extends EventEmitter {
 			log.info(`Path to 7zip: ${path7za}`);
 			return new Extractor7Zip();
 		} else {
-			log.warn(`Unknown archive format: ${url}. Assuming it's a zip file.`);
+			log.warn(`Unknown archive format: ${source}. Assuming it's a zip file.`);
 			return new ExtractorZip();
 		}
 	}

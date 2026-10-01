@@ -11,9 +11,10 @@ const { log } = require('./spring_log');
 const Extractor = require('./extractor');
 const {
 	makeParentDir,
-	getTemporaryFileName,
+	makeDir,
+	TMP_DIR,
 	removeTemporaryFiles,
-	renameSyncWithRetry,
+	renameSyncWithRetry
 } = require('./fs_utils');
 
 class HttpDownloader extends EventEmitter {
@@ -51,14 +52,12 @@ class HttpDownloader extends EventEmitter {
 			return;
 		}
 
-		const destinationTemp = getTemporaryFileName('download');
-		makeParentDir(destinationTemp);
+		makeDir(TMP_DIR);
 
 		const dl = new DownloaderHelper(
 			url.href,
-			path.dirname(destinationTemp),
+			TMP_DIR,
 			{
-				fileName: path.basename(destinationTemp),
 				override: true,
 				timeout: 10000, // 10 seconds timeout for socket inactivity
 				retry: { maxRetries: 5, delay: 3000 },
@@ -80,7 +79,7 @@ class HttpDownloader extends EventEmitter {
 			makeParentDir(destination);
 
 			if (!resource['extract']) {
-				renameSyncWithRetry(destinationTemp, destination);
+				renameSyncWithRetry(downloadInfo.filePath, destination);
 				this.emit('finished', name);
 				return;
 			}
@@ -92,7 +91,7 @@ class HttpDownloader extends EventEmitter {
 				downloadInfo.downloadedSize
 			);
 
-			this.extractor.extract(name, url, destinationTemp, destination);
+			this.extractor.extract(name, downloadInfo.filePath, destination);
 		});
 
 		let handledErrorOnce = false;
